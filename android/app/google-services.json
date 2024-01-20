@@ -1,0 +1,70 @@
+{
+  "project_info": {
+    "project_number": "864810328858",
+    "project_id": "wheredidispend-ai",
+    "storage_bucket": "wheredidispend-ai.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:864810328858:android:b82671a61b1a45715dc2a3",
+        "android_client_info": {
+          "package_name": "com.wheredidispend.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "864810328858-c0po1mjcv79krap53n8v83ve9cisoh3k.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wheredidispend.app",
+            "certificate_hash": "b11eddf808c401b7f9e7aa4f917332a59eaa020c"
+          }
+        },
+        {
+          "client_id": "864810328858-fgh6j5s10fv7pd5gi511k82u7o4oecan.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wheredidispend.app",
+            "certificate_hash": "896dbe77b8ea9ee953daa8ed378525cbca70f41c"
+          }
+        },
+        {
+          "client_id": "864810328858-ojto2utrp0m6s11lf6vbq3b4v74ll2ll.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.wheredidispend.app",
+            "certificate_hash": "8b72876d2ded734f31d7d3a491a1dbd9490956e7"
+          }
+        },
+        {
+          "client_id": "864810328858-r5n4qlk2m4u719nuvf5uqb1uaa1bdpgi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDMLp39qeO0VhsInF8W7JRuXloYqqIWsss"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "864810328858-r5n4qlk2m4u719nuvf5uqb1uaa1bdpgi.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "864810328858-apbtv1afaqo3666j6gghi3ubt01c8rtt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.thriftlog.app.thriftlog"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
