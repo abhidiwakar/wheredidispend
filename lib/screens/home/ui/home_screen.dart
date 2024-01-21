@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_sharing_intent/flutter_sharing_intent.dart';
 import 'package:flutter_sharing_intent/model/sharing_file.dart';
 import 'package:flutter_svg/svg.dart';
@@ -14,7 +15,8 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'package:intl/intl.dart';
 import 'package:wheredidispend/models/transaction.dart';
 import 'package:wheredidispend/router/route_constants.dart';
-import 'package:wheredidispend/screens/transaction/repository/transaction_repository.dart';
+import 'package:wheredidispend/screens/home/bloc/home_bloc.dart';
+import 'package:wheredidispend/screens/home/ui/widgets/no_transaction.dart';
 import 'package:wheredidispend/utils/text_to_number.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -30,45 +32,78 @@ class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey<RefreshIndicatorState> _refreshKey =
       GlobalKey<RefreshIndicatorState>();
-  final List<Transaction> _transactions = [];
+  // final List<Transaction> _transactions = [];
 
-  Future<void> _getTransactions() async {
+  Future<void> _getTransactions({bool loadMore = false}) async {
+    final state = context.read<HomeBloc>().state;
+    if (state is HomeLoading || state is HomeLoadingMore) {
+      dev.log("Not fetching transactions as already loading");
+      return;
+    }
+
     final limit = (MediaQuery.of(context).size.longestSide / 50).round();
     // log("=====> Fetching $limit transactions...");
-    return TransactionRepository.getTransactions(
-      limit: limit,
-      firstId: _transactions.firstOrNull?.id,
-      lastId: _transactions.lastOrNull?.id,
-    ).then((value) {
-      if (value.success) {
-        setState(() {
-          value.data?.forEach((element) {
-            if (_transactions.where((el) => element == el).isEmpty) {
-              _transactions.add(element);
-            }
-          });
-          _transactions.sort((a, b) {
-            return b.date.compareTo(a.date);
-          });
-        });
-      } else {
-        showAdaptiveDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text("Error"),
-            content: Text(value.message!),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  context.pop();
-                },
-                child: const Text("OK"),
-              ),
-            ],
-          ),
-        );
-      }
-    });
+    // return TransactionRepository.getTransactions(
+    //   limit: limit,
+    //   firstId: _transactions.firstOrNull?.id,
+    //   lastId: _transactions.lastOrNull?.id,
+    // ).then((value) {
+    //   if (value.success) {
+    //     setState(() {
+    //       value.data?.forEach((element) {
+    //         if (_transactions.where((el) => element == el).isEmpty) {
+    //           _transactions.add(element);
+    //         }
+    //       });
+    //       _transactions.sort((a, b) {
+    //         return b.date.compareTo(a.date);
+    //       });
+    //     });
+    //   } else {
+    //     showAdaptiveDialog(
+    //       context: context,
+    //       builder: (_) => AlertDialog(
+    //         title: const Text("Error"),
+    //         content: Text(value.message!),
+    //         actions: [
+    //           TextButton(
+    //             onPressed: () {
+    //               context.pop();
+    //             },
+    //             child: const Text("OK"),
+    //           ),
+    //         ],
+    //       ),
+    //     );
+    //   }
+    // });
+    String? firstId;
+    String? lastId;
+    List<Transaction> existingTransactions = [];
+
+    if (state is HomeSuccess) {
+      final state = context.read<HomeBloc>().state as HomeSuccess;
+      firstId = state.transactions.firstOrNull?.id;
+      lastId = state.transactions.lastOrNull?.id;
+      existingTransactions = state.transactions;
+    }
+
+    if (loadMore) {
+      context.read<HomeBloc>().add(
+            FetchMoreHomeEvent(
+              limit: limit,
+              firstId: firstId,
+              lastId: lastId,
+              transactions: existingTransactions,
+            ),
+          );
+    } else {
+      context.read<HomeBloc>().add(
+            FetchHomeEvent(
+              limit: limit,
+            ),
+          );
+    }
   }
 
   Future<dynamic> _processImage(String imagePath) async {
@@ -138,7 +173,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     Future.delayed(Duration.zero, () {
       // Fetch transactions on first load
-      _refreshKey.currentState?.show();
+      // _refreshKey.currentState?.show();
+      _getTransactions();
 
       // Fetch more data when user reaches the end of the list
       _scrollController.addListener(() {
@@ -146,7 +182,8 @@ class _HomeScreenState extends State<HomeScreen> {
         if (_scrollController.position.pixels ==
             _scrollController.position.maxScrollExtent) {
           // Load more data only if not already loading
-          _refreshKey.currentState?.show(atTop: false);
+          // _refreshKey.currentState?.show(atTop: false);
+          _getTransactions(loadMore: true);
         }
       });
     });
@@ -173,9 +210,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 "description": value["description"],
               },
             ).then((value) {
-              if (value != null && bool.tryParse(value.toString()) == true) {
-                _refreshKey.currentState?.show();
-              }
+              dev.log("Fetch transactions");
+              // if (value != null && bool.tryParse(value.toString()) == true) {
+              //   _refreshKey.currentState?.show();
+              // }
             });
           }
         });
@@ -231,6 +269,24 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 10),
           const Text('WhereDidISpend?'),
         ]),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(3),
+          child: BlocSelector<HomeBloc, HomeState, bool>(
+            selector: (state) {
+              return state is HomeLoading || state is HomeLoadingMore;
+            },
+            builder: (context, state) {
+              return state
+                  ? const SizedBox(
+                      height: 3,
+                      child: LinearProgressIndicator(),
+                    )
+                  : const SizedBox(
+                      height: 3,
+                    );
+            },
+          ),
+        ),
         centerTitle: false,
         actions: [
           IconButton(
@@ -259,11 +315,11 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
         onPressed: () async {
-          bool? result = await context.pushNamed(AppRoute.addTransaction.name);
-          dev.log("Result: $result");
-          if (result != null && result) {
-            _refreshKey.currentState?.show();
-          }
+          context.pushNamed(AppRoute.addTransaction.name);
+          // dev.log("Result: $result");
+          // if (result != null && result) {
+          //   _refreshKey.currentState?.show();
+          // }
         },
         child: const Icon(Icons.add),
       ),
@@ -273,49 +329,46 @@ class _HomeScreenState extends State<HomeScreen> {
         onRefresh: () {
           return _getTransactions();
         },
-        child: _transactions.isEmpty
-            ? Center(
-                child: RichText(
-                  textAlign: TextAlign.center,
-                  text: const TextSpan(
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
-                    ),
-                    children: [
-                      TextSpan(
-                        text: "You don't have any transactions yet.\n",
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      TextSpan(text: "Click on the "),
-                      WidgetSpan(
-                          child: Icon(
-                        Icons.add,
-                        size: 16,
-                      )),
-                      TextSpan(text: " button to add a new transaction."),
-                    ],
-                  ),
-                ),
-              )
-            : ListView.builder(
+        child: BlocConsumer<HomeBloc, HomeState>(
+          listener: (context, state) {
+            if (state is HomeFailure) {
+              Fluttertoast.showToast(
+                msg: state.message,
+              );
+            }
+          },
+          builder: (context, state) {
+            if (state is HomeLoading) {
+              return const NoTransaction();
+            }
+
+            if (state is HomeSuccess || state is HomeLoadingMore) {
+              if (state is HomeSuccess && state.transactions.isEmpty) {
+                return const NoTransaction();
+              }
+
+              final transactions = state is HomeSuccess
+                  ? state.transactions
+                  : state is HomeLoadingMore
+                      ? state.transactions
+                      : [];
+
+              return ListView.builder(
                 controller: _scrollController,
-                itemCount: _transactions.length,
+                itemCount: transactions.length,
                 itemBuilder: (context, index) {
                   return Column(
                     children: [
                       (index == 0) ||
-                              (_transactions[index].date.month !=
-                                  _transactions[index - 1].date.month)
+                              (transactions[index].date.month !=
+                                  transactions[index - 1].date.month)
                           ? ListTile(
                               title: Text(
-                                _transactions[index].date.month ==
+                                transactions[index].date.month ==
                                         DateTime.now().month
                                     ? "This month"
                                     : DateFormat('MMMM yyyy')
-                                        .format(_transactions[index].date),
+                                        .format(transactions[index].date),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -332,21 +385,21 @@ class _HomeScreenState extends State<HomeScreen> {
                           // ),
                           leading: CircleAvatar(
                             child: Text(DateFormat('dd')
-                                .format(_transactions[index].date)),
+                                .format(transactions[index].date)),
                           ),
                           title: Text(
                             NumberFormat.simpleCurrency(
-                                    name: _transactions[index].currency)
+                                    name: transactions[index].currency)
                                 .format(
-                              _transactions[index].amount,
+                              transactions[index].amount,
                             ),
                             style: const TextStyle(
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          subtitle: _transactions[index].description != null &&
-                                  _transactions[index].description!.isNotEmpty
-                              ? Text(_transactions[index].description!)
+                          subtitle: transactions[index].description != null &&
+                                  transactions[index].description!.isNotEmpty
+                              ? Text(transactions[index].description!)
                               : null,
                         ),
                       ),
@@ -359,7 +412,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   top: 10,
                   bottom: MediaQuery.of(context).viewPadding.bottom + 100,
                 ),
-              ),
+              );
+            }
+
+            return Container();
+          },
+        ),
       ),
     );
   }

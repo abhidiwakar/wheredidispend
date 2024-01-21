@@ -10,7 +10,7 @@ import 'package:wheredidispend/utils/http.dart';
 
 class TransactionRepository {
   static Future<HttpResponse<List<Transaction>>> getTransactions(
-      {String? lastId, String? firstId, int limit = 20}) async {
+      {String? lastId, String? firstId, int? limit = 20}) async {
     try {
       final params = {
         if (firstId != null) "firstId": firstId,

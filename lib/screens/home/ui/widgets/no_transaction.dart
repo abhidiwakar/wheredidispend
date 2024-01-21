@@ -7,18 +7,28 @@ class NoTransaction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text.rich(
-        TextSpan(
+    return Center(
+      child: RichText(
+        textAlign: TextAlign.center,
+        text: const TextSpan(
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 16,
+          ),
           children: [
-            TextSpan(text: "Click "),
-            WidgetSpan(
-              child: Icon(
-                Icons.add,
-                size: 14,
+            TextSpan(
+              text: "You don't have any transactions yet.\n",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
               ),
             ),
-            TextSpan(text: " button to add transaction."),
+            TextSpan(text: "Click on the "),
+            WidgetSpan(
+                child: Icon(
+              Icons.add,
+              size: 16,
+            )),
+            TextSpan(text: " button to add a new transaction."),
           ],
         ),
       ),

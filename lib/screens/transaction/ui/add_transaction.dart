@@ -2,12 +2,14 @@ import 'dart:io';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:wheredidispend/models/transaction.dart';
 import 'dart:developer';
-import 'package:wheredidispend/screens/transaction/repository/transaction_repository.dart';
+import 'package:wheredidispend/repositories/transaction_repository.dart';
+import 'package:wheredidispend/screens/home/bloc/home_bloc.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final String? amount;
@@ -69,7 +71,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     // log(transaction.toString());
     TransactionRepository.addTransaction(transaction).then((result) {
       if (result.success == true) {
-        context.pop(true);
+        final limit = (MediaQuery.of(context).size.longestSide / 50).round();
+        context.read<HomeBloc>().add(FetchHomeEvent(limit: limit));
+        context.pop();
       } else {
         setState(() {
           _isAddingTransaction = false;
