@@ -37,3 +37,14 @@ final class HomeFailure extends HomeState {
   @override
   List<Object> get props => [message];
 }
+
+final class HomeLoadingMoreFailure extends HomeState {
+  final String message;
+  final List<Transaction> transactions;
+
+  const HomeLoadingMoreFailure(
+      {required this.message, required this.transactions});
+
+  @override
+  List<Object> get props => [message, transactions.toString()];
+}

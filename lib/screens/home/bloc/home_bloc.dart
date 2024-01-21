@@ -37,7 +37,12 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         log("Success!!! ${transactions.toString()}");
         emit(HomeSuccess(transactions));
       } else {
-        emit(HomeFailure(result.message ?? "Something went wrong!"));
+        emit(
+          HomeLoadingMoreFailure(
+            message: result.message ?? "Something went wrong!",
+            transactions: event.transactions ?? [],
+          ),
+        );
       }
     });
   }

@@ -18,6 +18,7 @@ import 'package:wheredidispend/router/route_constants.dart';
 import 'package:wheredidispend/screens/home/bloc/home_bloc.dart';
 import 'package:wheredidispend/screens/home/ui/widgets/no_transaction.dart';
 import 'package:wheredidispend/utils/text_to_number.dart';
+import 'package:wheredidispend/widgets/error_message.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -81,11 +82,12 @@ class _HomeScreenState extends State<HomeScreen> {
     String? lastId;
     List<Transaction> existingTransactions = [];
 
-    if (state is HomeSuccess) {
-      final state = context.read<HomeBloc>().state as HomeSuccess;
-      firstId = state.transactions.firstOrNull?.id;
-      lastId = state.transactions.lastOrNull?.id;
-      existingTransactions = state.transactions;
+    if (state is HomeSuccess ||
+        state is HomeLoadingMore ||
+        state is HomeLoadingMoreFailure) {
+      existingTransactions = _getTransactionFromState(state);
+      firstId = existingTransactions.firstOrNull?.id;
+      lastId = existingTransactions.lastOrNull?.id;
     }
 
     if (loadMore) {
@@ -256,6 +258,18 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  _getTransactionFromState(dynamic state) {
+    if (state is HomeSuccess) {
+      return state.transactions;
+    } else if (state is HomeLoadingMore) {
+      return state.transactions;
+    } else if (state is HomeLoadingMoreFailure) {
+      return state.transactions;
+    } else {
+      return [];
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -331,27 +345,52 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         child: BlocConsumer<HomeBloc, HomeState>(
           listener: (context, state) {
-            if (state is HomeFailure) {
-              Fluttertoast.showToast(
-                msg: state.message,
+            if (state is HomeLoadingMoreFailure) {
+              showAdaptiveDialog(
+                context: context,
+                builder: (_) {
+                  return AlertDialog(
+                    title: const Text("Error"),
+                    content: Text(state.message),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          context.pop();
+                        },
+                        child: const Text("OK"),
+                      ),
+                    ],
+                  );
+                },
               );
             }
           },
           builder: (context, state) {
+            if (state is HomeFailure) {
+              return ErrorMessage(
+                message: state.message,
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: ElevatedButton.icon(
+                    onPressed: _getTransactions,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text("Try again"),
+                  ),
+                ),
+              );
+            }
+
             if (state is HomeLoading) {
               return const NoTransaction();
             }
 
-            if (state is HomeSuccess || state is HomeLoadingMore) {
-              if (state is HomeSuccess && state.transactions.isEmpty) {
+            if (state is HomeSuccess ||
+                state is HomeLoadingMore ||
+                state is HomeLoadingMoreFailure) {
+              final transactions = _getTransactionFromState(state);
+              if (transactions.isEmpty) {
                 return const NoTransaction();
               }
-
-              final transactions = state is HomeSuccess
-                  ? state.transactions
-                  : state is HomeLoadingMore
-                      ? state.transactions
-                      : [];
 
               return ListView.builder(
                 controller: _scrollController,
