@@ -1,5 +1,7 @@
+import 'dart:developer';
 import 'dart:io';
 
+import 'package:currency_picker/currency_picker.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,9 +9,9 @@ import 'package:flutter_multi_formatter/flutter_multi_formatter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:wheredidispend/models/transaction.dart';
-import 'dart:developer';
 import 'package:wheredidispend/repositories/transaction_repository.dart';
 import 'package:wheredidispend/screens/home/bloc/home_bloc.dart';
+import 'package:wheredidispend/utils/currency.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final String? amount;
@@ -22,10 +24,7 @@ class AddTransactionScreen extends StatefulWidget {
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
   var _isAddingTransaction = false;
-  final _amountFieldController = TextEditingController(
-      text: "${NumberFormat.simpleCurrency(
-    locale: Platform.localeName,
-  ).currencySymbol}0");
+  final _amountFieldController = TextEditingController(text: "");
   final _descriptionFieldController = TextEditingController(text: "");
 
   _addTransaction() async {
@@ -53,18 +52,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       return;
     }
 
+    if (MediaQuery.of(context).viewInsets.bottom > 0) {
+      FocusScope.of(context).unfocus();
+    }
+
     final description = _descriptionFieldController.text;
+    final currency = await getCurrency();
     final transaction = Transaction(
       amount: amount,
       description: description,
       date: DateTime.now(),
-      currency: NumberFormat.simpleCurrency(
-        locale: Platform.localeName,
-      ).currencyName,
+      currency: currency?.code ??
+          NumberFormat.simpleCurrency(
+            locale: Platform.localeName,
+          ).currencyName,
     );
-    if (MediaQuery.of(context).viewInsets.bottom > 0) {
-      FocusScope.of(context).unfocus();
-    }
+
     setState(() {
       _isAddingTransaction = true;
     });
@@ -163,15 +166,21 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   //   }
   // }
 
+  _initAmount() async {
+    final currency = await getCurrency();
+    if (widget.amount != null) {
+      _amountFieldController.text = "${NumberFormat.currency(
+        symbol: currency?.symbol,
+        decimalDigits: currency?.decimalDigits,
+        name: currency?.name,
+      ).currencySymbol}${widget.amount ?? 0}";
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    log("AddTransactionScreen init -> ${widget.amount} ${widget.description}");
-    if (widget.amount != null) {
-      _amountFieldController.text = "${NumberFormat.simpleCurrency(
-        locale: Platform.localeName,
-      ).currencySymbol}${widget.amount ?? 0}";
-    }
+    _initAmount();
     if (widget.description != null) {
       _descriptionFieldController.text = widget.description ?? "";
     }
@@ -200,30 +209,67 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            TextField(
-                              textAlign: TextAlign.center,
-                              controller: _amountFieldController,
-                              autofocus: true,
-                              style: const TextStyle(
-                                fontSize: 36,
-                              ),
-                              maxLength: 15,
-                              inputFormatters: [
-                                CurrencyInputFormatter(
-                                  leadingSymbol: NumberFormat.simpleCurrency(
-                                    locale: Platform.localeName,
-                                  ).currencySymbol,
-                                ),
-                              ],
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                counterText: "",
-                              ),
-                            ),
+                            // Container(
+                            //   padding: const EdgeInsets.all(8),
+                            //   decoration: BoxDecoration(
+                            //     color: Theme.of(context)
+                            //         .colorScheme
+                            //         .surfaceVariant,
+                            //     borderRadius: BorderRadius.circular(10),
+                            //   ),
+                            //   child: RichText(
+                            //     text: TextSpan(
+                            //       children: [
+                            //         TextSpan(
+                            //           text: "INR",
+                            //           style: Theme.of(context)
+                            //               .textTheme
+                            //               .labelSmall,
+                            //         ),
+                            //         const WidgetSpan(
+                            //           child: Icon(
+                            //             Icons.arrow_drop_down_outlined,
+                            //             size: 18,
+                            //           ),
+                            //         )
+                            //       ],
+                            //     ),
+                            //   ),
+                            // ),
+                            FutureBuilder<Currency?>(
+                                future: getCurrency(),
+                                builder: (context, snap) {
+                                  return TextField(
+                                    textAlign: TextAlign.center,
+                                    controller: _amountFieldController,
+                                    autofocus: true,
+                                    style: const TextStyle(
+                                      fontSize: 36,
+                                    ),
+                                    maxLength: 15,
+                                    inputFormatters: [
+                                      CurrencyInputFormatter(
+                                        leadingSymbol: snap.data?.symbol ??
+                                            NumberFormat.simpleCurrency(
+                                              locale: Platform.localeName,
+                                            ).currencySymbol,
+                                      ),
+                                    ],
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      counterText: "",
+                                      hintText: NumberFormat.currency(
+                                        decimalDigits: snap.data?.decimalDigits,
+                                        name: snap.data?.name,
+                                        symbol: snap.data?.symbol,
+                                      ).format(0),
+                                    ),
+                                  );
+                                }),
                             const SizedBox(
                               height: 15,
                             ),

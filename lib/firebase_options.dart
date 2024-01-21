@@ -63,8 +63,10 @@ class DefaultFirebaseOptions {
     messagingSenderId: '864810328858',
     projectId: 'wheredidispend-ai',
     storageBucket: 'wheredidispend-ai.appspot.com',
-    androidClientId: '864810328858-c0po1mjcv79krap53n8v83ve9cisoh3k.apps.googleusercontent.com',
-    iosClientId: '864810328858-mu1vrps906hp2v1ctirj2eov06n1ki9u.apps.googleusercontent.com',
+    androidClientId:
+        '864810328858-c0po1mjcv79krap53n8v83ve9cisoh3k.apps.googleusercontent.com',
+    iosClientId:
+        '864810328858-mu1vrps906hp2v1ctirj2eov06n1ki9u.apps.googleusercontent.com',
     iosBundleId: 'com.wheredidispend.app',
   );
 }

@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wheredidispend/screens/profile/repository/profile_repository.dart';
+import 'package:wheredidispend/screens/profile/ui/widget/about_tile.dart';
+import 'package:wheredidispend/screens/profile/ui/widget/currency_tile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -54,6 +56,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 20),
+            const Divider(),
+            const AboutTile(),
+            const CurrencyTile(),
             const Divider(),
             ListTile(
               leading: const Icon(Icons.delete_forever_outlined),
