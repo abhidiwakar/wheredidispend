@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:wheredidispend/models/transaction.dart';
+import 'package:wheredidispend/models/transaction_average.dart';
 import 'package:wheredidispend/utils/dio.dart';
 import 'package:wheredidispend/utils/http.dart';
 
@@ -37,6 +38,40 @@ class TransactionRepository {
     } catch (e) {
       FirebaseCrashlytics.instance.recordError(e, StackTrace.current);
       // log(e.toString());
+      return const HttpResponse(false, message: "Something went wrong!");
+    }
+  }
+
+  static Future<HttpResponse<double?>> getAverageSpending() async {
+    try {
+      final result = await ApiService("/transaction").dio.get<List<dynamic>>(
+            '/get/average',
+          );
+      if (result.data == null || result.data!.isEmpty) {
+        return const HttpResponse(
+          false,
+          message: "No transactions found!",
+        );
+      }
+
+      final averageSpending = TransactionAverage.fromJson(result.data!.first);
+      return HttpResponse(
+        true,
+        data: averageSpending.averageSpending,
+      );
+    } on DioException catch (e) {
+      log(e.toString());
+      return HttpResponse(
+        false,
+        message: HttpResponse.getMessage(e.response?.data['message']) ??
+            "Unknown error occured!",
+      );
+    } on SocketException {
+      log("Network error!");
+      return const HttpResponse(false, message: "No internet connection!");
+    } catch (e) {
+      FirebaseCrashlytics.instance.recordError(e, StackTrace.current);
+      log(e.toString());
       return const HttpResponse(false, message: "Something went wrong!");
     }
   }

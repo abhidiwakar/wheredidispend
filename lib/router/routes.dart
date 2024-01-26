@@ -1,5 +1,4 @@
-import 'dart:developer';
-
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:wheredidispend/router/route_constants.dart';
 import 'package:wheredidispend/screens/auth/ui/auth_screen.dart';
@@ -7,6 +6,7 @@ import 'package:wheredidispend/screens/home/ui/home_screen.dart';
 import 'package:wheredidispend/screens/init/init_screen.dart';
 import 'package:wheredidispend/screens/profile/ui/profile_screen.dart';
 import 'package:wheredidispend/screens/transaction/attachments/attachments.dart';
+import 'package:wheredidispend/screens/transaction/bloc/transaction_bloc.dart';
 import 'package:wheredidispend/screens/transaction/ui/add_transaction.dart';
 import 'package:wheredidispend/screens/transaction/ui/view_transaction.dart';
 import 'package:wheredidispend/screens/update/ui/update_screen.dart';
@@ -41,17 +41,16 @@ final appRouter = GoRouter(
     GoRoute(
       name: AppRoute.addTransaction.name,
       path: AppRoute.addTransaction.route,
-      builder: (context, state) {
-        log(state.extra.toString());
-        if (state.extra != null) {
-          return AddTransactionScreen(
-            amount: (state.extra as Map<String, dynamic>)["amount"],
-            description: (state.extra as Map<String, dynamic>)["description"],
-          );
-        } else {
-          return const AddTransactionScreen();
-        }
-      },
+      builder: (context, state) => BlocProvider<TransactionBloc>(
+        create: (context) => TransactionBloc(),
+        child: state.extra != null
+            ? AddTransactionScreen(
+                amount: (state.extra as Map<String, dynamic>)["amount"],
+                description:
+                    (state.extra as Map<String, dynamic>)["description"],
+              )
+            : const AddTransactionScreen(),
+      ),
     ),
     GoRoute(
       name: AppRoute.viewTransaction.name,

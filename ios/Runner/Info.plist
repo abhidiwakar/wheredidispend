@@ -41,7 +41,8 @@
 				<string>Editor</string>
 				<key>CFBundleURLSchemes</key>
 				<array>
-					<string>com.googleusercontent.apps.864810328858-apbtv1afaqo3666j6gghi3ubt01c8rtt</string>
+					<string>com.googleusercontent.apps.864810328858-mu1vrps906hp2v1ctirj2eov06n1ki9u</string>
+					<string>SharingMedia-com.wheredidispend.app</string>
 				</array>
 			</dict>
 		</array>
@@ -64,5 +65,7 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>AppGroupId</key>
+		<string>group.com.wheredidispend.app</string>
 	</dict>
 </plist>

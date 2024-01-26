@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:wheredidispend/models/transaction.dart';
 import 'package:wheredidispend/repositories/transaction_repository.dart';
 import 'package:wheredidispend/screens/home/bloc/home_bloc.dart';
+import 'package:wheredidispend/screens/transaction/bloc/transaction_bloc.dart';
 import 'package:wheredidispend/utils/currency.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -24,6 +25,8 @@ class AddTransactionScreen extends StatefulWidget {
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
   var _isAddingTransaction = false;
+  var _emoji = "";
+  var _spendMessage = "";
   final _amountFieldController = TextEditingController(text: "");
   final _descriptionFieldController = TextEditingController(text: "");
 
@@ -105,39 +108,48 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   // var _locationText = "";
   // var _coordinates;
 
-  // _getEmoji() {
-  //   //TODO: Calculate average transaction amount and show emoji accordingly
-  //   return "";
-  //   // final amountString =
-  //   //     _amountFieldController.text.substring(1).replaceAll(",", "");
-  //   // final amount = double.tryParse(amountString);
+  _getEmoji() {
+    final averageAmount = context.read<TransactionBloc>().state
+            is TransactionAverageSuccess
+        ? (context.read<TransactionBloc>().state as TransactionAverageSuccess)
+            .averageSpending
+        : null;
+    if (_amountFieldController.text.isEmpty) {
+      return;
+    }
+    final amountString =
+        _amountFieldController.text.substring(1).replaceAll(",", "");
+    final amount = double.tryParse(amountString);
 
-  //   // if (amount == 0) return "";
+    String newEmoji = "";
 
-  //   // if (amount != null) {
-  //   //   if (amount > 0 && amount <= 500) {
-  //   //     return "😃";
-  //   //   }
+    log("Amount: $amount, Average: $averageAmount");
+    if (amount != null && amount != 0 && averageAmount != null) {
+      log("Amount: $amount, Average: $averageAmount");
+      final deviation = ((amount - averageAmount) / averageAmount) * 100;
 
-  //   //   if (amount > 500 && amount <= 1000) {
-  //   //     return "😀";
-  //   //   }
+      if (deviation <= 10) {
+        newEmoji = "😃";
+        _spendMessage = "You are spending within 10 percent of your average!";
+      } else if (deviation > 10 && deviation <= 30) {
+        newEmoji = "🤔";
+        _spendMessage =
+            "You are spending more than 10 percent of your average!";
+      } else if (deviation > 30 && deviation <= 50) {
+        newEmoji = "😐";
+        _spendMessage =
+            "You are spending more than 30 percent of your average!";
+      } else {
+        newEmoji = "🔥";
+        _spendMessage =
+            "You are spending more than 50 percent of your average!";
+      }
+    }
 
-  //   //   if (amount > 1000 && amount <= 5000) {
-  //   //     return "🙂";
-  //   //   }
-
-  //   //   if (amount > 5000 && amount <= 10000) {
-  //   //     return "🤔";
-  //   //   }
-
-  //   //   if (amount > 10000 && amount <= 50000) {
-  //   //     return "😐";
-  //   //   }
-  //   // }
-
-  //   // return "🔥";
-  // }
+    setState(() {
+      _emoji = newEmoji;
+    });
+  }
 
   // _requestLocationPermission() async {
   //   var permission = await Geolocator.checkPermission();
@@ -181,10 +193,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   void initState() {
     super.initState();
     _initAmount();
+    Future.delayed(Duration.zero, () {
+      context.read<TransactionBloc>().add(TransactionGetAverageEvent());
+    });
     if (widget.description != null) {
       _descriptionFieldController.text = widget.description ?? "";
     }
+    _amountFieldController.addListener(() {
+      _getEmoji();
+    });
     FirebaseAnalytics.instance.setCurrentScreen(screenName: 'Add Transaction');
+  }
+
+  @override
+  void dispose() {
+    _amountFieldController.dispose();
+    _descriptionFieldController.dispose();
+    super.dispose();
   }
 
   @override
@@ -197,7 +222,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             extendBody: true,
             appBar: AppBar(
               centerTitle: true,
-              // title: Text(_getEmoji()),
+              title: _emoji != ""
+                  ? Tooltip(
+                      message: _spendMessage,
+                      margin: EdgeInsets.symmetric(
+                        horizontal: MediaQuery.of(context).size.width * 0.1,
+                      ),
+                      child: Text(_emoji),
+                    )
+                  : null,
             ),
             body: Column(
               children: [

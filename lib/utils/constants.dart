@@ -4,3 +4,6 @@ const baseURL = "https://wheredidispend.devabhi.co.in";
 const baseAPIURL = "$baseURL/api";
 const termsAndConditionsURL = "$baseURL/v/terms-and-conditions";
 const privacyPolicyURL = "$baseURL/v/privacy-policy";
+const newFeaturesURL = "$baseURL/v/new-features";
+
+const kHideAutoFillBottomSheet = "kHideAutoFillBottomSheet";

@@ -13,10 +13,13 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wheredidispend/models/transaction.dart';
 import 'package:wheredidispend/router/route_constants.dart';
 import 'package:wheredidispend/screens/home/bloc/home_bloc.dart';
+import 'package:wheredidispend/screens/home/ui/widgets/feature_intro.dart';
 import 'package:wheredidispend/screens/home/ui/widgets/no_transaction.dart';
+import 'package:wheredidispend/utils/constants.dart';
 import 'package:wheredidispend/utils/text_to_number.dart';
 import 'package:wheredidispend/widgets/error_message.dart';
 
@@ -167,9 +170,24 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  _featureIntro() async {
+    SharedPreferences.getInstance().then((value) {
+      if (value.getBool(kHideAutoFillBottomSheet) != true) {
+        showModalBottomSheet(
+          context: context,
+          builder: (ctx) => const FeatureIntro(),
+        );
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
+
+    Future.delayed(Duration.zero, () {
+      _featureIntro();
+    });
 
     FirebaseAnalytics.instance.setCurrentScreen(screenName: 'Home');
 
